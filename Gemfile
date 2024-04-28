@@ -38,6 +38,8 @@ gem "bootsnap", require: false
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem "debug", platforms: %i[ mri windows ]
+  # To make tests (specialized in TDD and BDD)
+  gem 'rspec-rails', '~> 6.1.0'
 end
 
 group :development do
@@ -45,3 +47,13 @@ group :development do
   # gem "spring"
 end
 
+group :test do
+  # To create fake models, that is, to have fake information and reuse it across different tests
+  gem 'factory_bot_rails'
+  # Provide additional validations for RSpec so tests can be even more legibles and self-documented
+  gem 'shoulda-matchers', '~> 6.0'
+  # Generate fake information
+  gem 'faker'
+  # Let us clean the database after each test execution so that we can ensure that each test starts and ends with the same information
+  gem 'database_cleaner'
+end
