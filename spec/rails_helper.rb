@@ -30,6 +30,25 @@ rescue ActiveRecord::PendingMigrationError => e
   abort e.to_s.strip
 end
 RSpec.configure do |config|
+  # Allow use FactoryBot methods within RSpec files without including the FactoryBot library
+  config.include FactoryBot::Syntax::Methods
+
+  # What this does behind the scenes is just, before each test, create a database
+  # transaction, and at the end of each test the transaction is going to be canceled
+  # in order to not store the data in the database at the end of the test.
+  config.before(:suite) do
+    DatabaseCleaner.strategy = :transaction
+    DatabaseCleaner.clean_with(:truncation)
+  end
+
+  # Here is saying that around each test ("example" here), we are going to use the
+  # cleaning strategy set before, and we are going to run the test.
+  config.around(:each) do |example|
+    DatabaseCleaner.cleaning do
+      example.run
+    end
+  end
+
   # Remove this line if you're not using ActiveRecord or ActiveRecord fixtures
   config.fixture_paths = [
     Rails.root.join('spec/fixtures')
@@ -62,4 +81,11 @@ RSpec.configure do |config|
   config.filter_rails_from_backtrace!
   # arbitrary gems may also be filtered via:
   # config.filter_gems_from_backtrace("gem name")
+end
+
+Shoulda::Matchers.configure do |config|
+  config.integrate do |with|
+    with.test_framework :rspec
+    with.library :rails
+  end
 end
