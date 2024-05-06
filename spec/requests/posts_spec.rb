@@ -2,10 +2,9 @@ require "rails_helper"
 
 RSpec.describe "Posts", type: :request do
   describe "GET /posts" do
-    before { get '/posts' }
-
     describe "without data in the DB" do
       it "should return OK" do
+        get '/posts'
         payload = JSON.parse(response.body)
         expect(payload).to be_empty
         expect(response).to have_http_status(200)
