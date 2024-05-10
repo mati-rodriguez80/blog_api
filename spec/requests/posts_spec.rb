@@ -41,4 +41,73 @@ RSpec.describe "Posts", type: :request do
       expect(response).to have_http_status(200)
     end
   end
+
+  describe "POST /posts" do
+    let!(:user) { create(:user) }
+
+    it "should create a post" do
+      req_payload = {
+        post: {
+          title: "Title",
+          content: "Content",
+          published: false,
+          user_id: user.id
+        }
+      }
+      post "/posts", params: req_payload
+      payload = JSON.parse(response.body)
+      expect(payload).not_to be_empty
+      expect(payload["id"]).not_to be_nil
+      expect(response).to have_http_status(:created) # 201
+    end
+
+    it "should return an error message on invalid post" do
+      req_payload = {
+        post: {
+          content: "Content",
+          published: false,
+          user_id: user.id
+        }
+      }
+      post "/posts", params: req_payload
+      payload = JSON.parse(response.body)
+      expect(payload).not_to be_empty
+      expect(payload["error"]).not_to be_empty
+      expect(response).to have_http_status(:unprocessable_entity) # 422
+    end
+  end
+
+  describe "PUT /posts/{id}" do
+    let!(:post) { create(:post) }
+
+    it "should edit a post" do
+      req_payload = {
+        post: {
+          title: "Title",
+          content: "Content",
+          published: true
+        }
+      }
+      put "/posts/#{post.id}", params: req_payload
+      payload = JSON.parse(response.body)
+      expect(payload).not_to be_empty
+      expect(payload["id"]).to eq(post.id)
+      expect(response).to have_http_status(:ok) # 200
+    end
+
+    it "should return an error message on invalid post" do
+      req_payload = {
+        post: {
+          title: nil,
+          content: nil,
+          published: true
+        }
+      }
+      put "/posts/#{post.id}", params: req_payload
+      payload = JSON.parse(response.body)
+      expect(payload).not_to be_empty
+      expect(payload["error"]).not_to be_empty
+      expect(response).to have_http_status(:unprocessable_entity) # 422
+    end
+  end
 end
