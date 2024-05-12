@@ -35,6 +35,11 @@ gem "bootsnap", require: false
 # Use Rack CORS for handling Cross-Origin Resource Sharing (CORS), making cross-origin Ajax possible
 # gem "rack-cors"
 
+# ActiveModelSerializers brings convention over configuration to your JSON generation
+# So far in the API, Rails have managed the serialization of our models to JSON. However, we sometimes need
+# more control over how we want to present the information, and for that we can use this gem.
+gem 'active_model_serializers', '~> 0.10.0'
+
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem "debug", platforms: %i[ mri windows ]

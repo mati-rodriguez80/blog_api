@@ -28,6 +28,21 @@ RSpec.describe "Posts", type: :request do
         expect(response).to have_http_status(200)
       end
     end
+
+    describe "Search" do
+      let!(:hello_world_post) { create(:published_post, title: "Hello World") }
+      let!(:hello_rails_post) { create(:published_post, title: "Hello Rails") }
+      let!(:rails_course_post) { create(:published_post, title: "Rails Course") }
+
+      it "should filter posts by title" do
+        get '/posts?search=Hello'
+        payload = JSON.parse(response.body)
+        expect(payload).not_to be_empty
+        expect(payload.size).to eq(2)
+        expect(payload.map { |post| post["id"] }.sort).to eq([hello_world_post.id, hello_rails_post.id].sort)
+        expect(response).to have_http_status(200)
+      end
+    end
   end
 
   describe "GET /posts/{id}" do
@@ -37,7 +52,15 @@ RSpec.describe "Posts", type: :request do
       get "/posts/#{post.id}"
       payload = JSON.parse(response.body)
       expect(payload).not_to be_empty
+      # After including ActiveModelSerializers, we are going to specify the new format about
+      # how a post should be serialized
       expect(payload["id"]).to eq(post.id)
+      expect(payload["title"]).to eq(post.title)
+      expect(payload["content"]).to eq(post.content)
+      expect(payload["published"]).to eq(post.published)
+      expect(payload["author"]["name"]).to eq(post.user.name)
+      expect(payload["author"]["email"]).to eq(post.user.email)
+      expect(payload["author"]["id"]).to eq(post.user.id)
       expect(response).to have_http_status(200)
     end
   end
