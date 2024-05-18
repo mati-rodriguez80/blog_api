@@ -27,7 +27,13 @@ class PostsController < ApplicationController
     if !params[:search].nil? && params[:search].present?
       @posts = PostsSearchService.search(@posts, params[:search])
     end
-    render json: @posts, status: :ok
+    # ActiveRecord/QueryMethods - includes(*args): Specify associations args to be eager loaded to prevent
+    # N + 1 queries. A separate query is performed for each association, unless a join is required by conditions.
+    # Rails provides an ActiveRecord method called :includes which loads associated records in advance and
+    # limits the number of SQL queries made to the database. This technique is known as "eager loading" and
+    # in many cases will improve performance by a significant amount.
+    # Time spent for 10 posts of 10 different users: Without includes - 39ms; With includes - 63ms.
+    render json: @posts.includes(:user), status: :ok
   end
 
   # POST /posts
