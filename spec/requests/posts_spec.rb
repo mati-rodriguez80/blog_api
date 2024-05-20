@@ -2,7 +2,13 @@ require "rails_helper"
 
 RSpec.describe "Posts", type: :request do
   describe "GET /posts" do
-    describe "without data in the DB" do
+    # From stackoverflow: The context is an alias for describe, so they are functionally equivalent.
+    # You can use them interchangeably, the only difference is how your spec file reads. There is no
+    # difference in test output for example. The RSpec book says:
+    # We tend to use describe() for things and context() for context.
+    # Additionally, one main thing that changed in the latest RSpec is that "context" can no longer
+    # be used as a top-level method.
+    context "without data in the DB" do
       it "should return OK" do
         get '/posts'
         payload = JSON.parse(response.body)
@@ -11,7 +17,7 @@ RSpec.describe "Posts", type: :request do
       end
     end
 
-    describe "with data in the DB" do
+    context "with data in the DB" do
       # let(:posts) {} is used to declared a variable called posts in this case, which it's going to
       # have assigned what we have within the block {}. Then, this variable is going to be available
       # to be used inside our tests. "let() {}" comes from RSpec.
