@@ -24,9 +24,8 @@ RSpec.describe "Posts with authentication", type: :request do
             # If it is, RSpec can call methods on it without referring to it explicitly. Expectations
             # can be set on it implicitly (without writing subject or the name of a named subject) as
             # we do here:
-            subject { JSON.parse(response.body) }
-            ########## Did he make a mistake saying "include(:id)"
-            it { is_expected.to include("id") }
+            subject { payload }
+            it { is_expected.to include(:id) }
             # The subject exists to support this one-line syntax.
             # it's only helpful to use an implicit subject when the context is likely to be well
             # understood by all readers and there is really no need for an example description.
@@ -43,8 +42,8 @@ RSpec.describe "Posts with authentication", type: :request do
           before { get "/posts/#{other_user_post_draft.id}", headers: auth_headers }
 
           context "payload" do
-            subject { JSON.parse(response.body) }
-            it { is_expected.to include("error") }
+            subject { payload }
+            it { is_expected.to include(:error) }
           end
 
           context "response" do
@@ -63,5 +62,13 @@ RSpec.describe "Posts with authentication", type: :request do
   end
 
   describe "PUT /posts/{id}" do
+  end
+
+  private
+
+  def payload
+    # Thanks to the method below, we can use both symbols and strings as keys to access the Hash values.
+    # For instance, a hash where keys :foo and "foo" are considered to be the same.
+    JSON.parse(response.body).with_indifferent_access
   end
 end
