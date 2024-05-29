@@ -11,6 +11,10 @@ RSpec.describe "Posts with authentication", type: :request do
   # This is usually the standard for known providers like AuthO.
   let!(:auth_headers) { { 'Authorization' => "Bearer #{user.auth_token}" } }
   let!(:other_auth_headers) { { 'Authorization' => "Bearer #{other_user.auth_token}" } }
+  let!(:create_params) { { "post" => { "title" => "Title", "content" => "Content", "published" => true } } }
+  let!(:invalid_create_params) { { "post" => { "content" => "Content", "published" => true } } }
+  let!(:update_params) { { "post" => { "title" => "Title", "content" => "Content", "published" => true } } }
+  let!(:invalid_update_params) { { "post" => { "title" => nil, "content" => nil, "published" => true } } }
 
   describe "GET /posts/{id}" do
     context "with valid auth" do
@@ -59,9 +63,99 @@ RSpec.describe "Posts with authentication", type: :request do
   end
 
   describe "POST /posts" do
+    context "with valid auth" do
+      context "should create a post" do
+        before { post "/posts", params: create_params, headers: auth_headers }
+
+        # Notice that when I run these two tests, a different user was created for each one
+        context "payload" do
+          subject { payload }
+          it { is_expected.to include(:id, :title, :content, :published, :author) }
+        end
+
+        context "response" do
+          subject { response }
+          it { is_expected.to have_http_status(:created) }
+        end
+      end
+
+      context "should return an error message on invalid post" do
+        before { post "/posts", params: invalid_create_params, headers: auth_headers }
+
+        context "payload" do
+          subject { payload }
+          it { is_expected.to include(:error) }
+        end
+
+        context "response" do
+          subject { response }
+          it { is_expected.to have_http_status(:unprocessable_entity) }
+        end
+      end
+    end
+
+    context "without auth" do
+      before { post "/posts", params: create_params }
+
+      context "payload" do
+        subject { payload }
+        it { is_expected.to include(:error) }
+      end
+
+      context "response" do
+        subject { response }
+        it { is_expected.to have_http_status(:unauthorized) }
+      end
+    end
   end
 
   describe "PUT /posts/{id}" do
+    context "with valid auth" do
+      context "when updating a user's post" do
+        context "should edit a post" do
+          before { put "/posts/#{user_post.id}", params: update_params, headers: auth_headers }
+
+          context "payload" do
+            subject { payload }
+            it { is_expected.to include(:id, :title, :content, :published, :author) }
+            it { expect(payload[:id]).to eq(user_post.id) }
+          end
+
+          context "response" do
+            subject { response }
+            it { is_expected.to have_http_status(:ok) }
+          end
+        end
+
+        context "should return an error message on invalid post" do
+          before { put "/posts/#{user_post.id}", params: invalid_update_params, headers: auth_headers }
+
+          context "payload" do
+            subject { payload }
+            it { is_expected.to include(:error) }
+          end
+
+          context "response" do
+            subject { response }
+            it { is_expected.to have_http_status(:unprocessable_entity) }
+          end
+        end
+      end
+
+      context "when updating other user's post" do
+        before { put "/posts/#{other_user_post.id}", params: update_params, headers: auth_headers }
+
+        context "payload" do
+          subject { payload }
+          it { is_expected.to include(:error) }
+        end
+
+        context "response" do
+          subject { response }
+          it { is_expected.to have_http_status(:not_found) }
+        end
+      end
+    end
   end
 
   private

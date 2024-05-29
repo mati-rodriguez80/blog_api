@@ -1,4 +1,6 @@
 class PostsController < ApplicationController
+  include Secured
+
   # By convention we use "!" when an action can modify the normal behaviour of a request
   before_action :authenticate_user!, only: [:create, :update]
 
@@ -12,6 +14,10 @@ class PostsController < ApplicationController
     # log.error "#{e.message}"
     # And, we usually have an error monitor system which would notify people interested in these errors
     render json: { error: e.message }, status: :internal_server_error
+  end
+
+  rescue_from ActiveRecord::RecordNotFound do |e|
+    render json: { error: e.message }, status: :not_found
   end
 
   rescue_from ActiveRecord::RecordInvalid do |e|
@@ -47,46 +53,20 @@ class PostsController < ApplicationController
   def create
     # We use create! and update! with "bang!" because we need those methods to fail and throw an exception
     # when the post is invalid or the params are invalid in order to be able to handle these exceptions.
-    @post = Current.user.posts.create!(post_params_create)
+    @post = Current.user.posts.create!(post_params)
     render json: @post, status: :created
   end
 
   # PUT /posts/:id
   def update
     @post = Current.user.posts.find(params[:id])
-    @post.update!(post_params_update)
+    @post.update!(post_params)
     render json: @post, status: :ok
   end
 
   private
 
-  def post_params_create
+  def post_params
     params.require(:post).permit(:title, :content, :published)
-  end
-
-  def post_params_update
-    params.require(:post).permit(:title, :content, :published)
-  end
-
-  def authenticate_user!
-    # Bearer xxxxx. When we use "()" in regex, we're defining a group of characters, and we can
-    # then extract that group of capture using "[]" like below.
-    token_regex = /Bearer (\w+)/
-    # Read auth header
-    headers = request.headers
-    # Verify if it is valid
-    if headers['Authorization'].present? && headers['Authorization'].match(token_regex)
-      # If we use match[0] we'll get the whole string get by the regex. But the next positions of
-      # the MatchData are going to be the different capture groups.
-      token = headers['Authorization'].match(token_regex)[1]
-      # Verify that the token matchs a user's token
-      # Also, we also need to store this user to make it accesible everywhere in the application.
-      # For this, we're going to use a new function provided since Rails 5 which is Current Attributes.
-      if (Current.user = User.find_by_auth_token(token))
-        return
-      end
-    end
-
-    render json: { error: 'Unauthorized' }, status: :unauthorized # 401
   end
 end
